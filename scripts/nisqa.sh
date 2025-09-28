@@ -13,11 +13,6 @@ echo "JOB_ID : ${PBS_JOBID:-unknown}"
 echo "WORKDIR: ${PBS_O_WORKDIR:-$PWD}"
 cd "${PBS_O_WORKDIR:-$PWD}"
 
-# ===== Environment hygiene =====
-# Avoid accidental oneAPI/MKL from module env
-module purge || true
-unset LD_PRELOAD || true
-
 # Limit threads for stability/reproducibility
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
@@ -46,4 +41,5 @@ python run_predict.py \
   --data_dir "$DATA_DIR" \
   --num_workers 0 \
   --bs 10 \
+  --ms_max_segments 10000  \
   --output_dir "$OUT_DIR" 2>&1 | tee "$LOG_FILE"
