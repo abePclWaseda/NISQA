@@ -27,8 +27,8 @@ which python
 python --version
 
 # ===== Paths =====
-DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/J-CHAT/separated/podcast_test/00000-of-00001/cuts.000000"
-OUT_DIR="data/ground_truth"
+DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/J-CHAT/audio/podcast_test/00000-of-00001/cuts.000000"
+OUT_DIR="data/ground_truth_audio"
 LOG_DIR="logs"
 mkdir -p "$OUT_DIR" "$LOG_DIR"
 
