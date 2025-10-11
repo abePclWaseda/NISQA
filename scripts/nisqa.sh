@@ -27,10 +27,10 @@ which python
 python --version
 
 # ===== Paths =====
-DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/data_stage_3/CSJ/audio"
-OUT_DIR="data_real/csj_20s_head50"
+DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/J-CHAT/separated/podcast_test/00000-of-00001/cuts.000000"
+OUT_DIR="data_real/podcast_test_20s_head50"
 LOG_DIR="logs"
-TMP_DIR="tmp_csj_20s_head50_${PBS_JOBID:-local}"
+TMP_DIR="tmp_podcast_test_20s_head50_${PBS_JOBID:-local}"
 
 mkdir -p "$OUT_DIR" "$LOG_DIR" "$TMP_DIR"
 
