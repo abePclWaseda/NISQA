@@ -3,6 +3,8 @@ data
 data_audio
 data_real
 data_tabidachi
+data_ipu_pause_gap_overlap
+data_sample_audio
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
