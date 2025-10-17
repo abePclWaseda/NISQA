@@ -12,6 +12,46 @@ model, utils = torch.hub.load(
 (get_speech_timestamps, _, _, _, _) = utils
 
 
+# --- IPUとPause抽出 ---
+def extract_ipu_and_pause(
+    audio: np.ndarray,
+    sr: int,
+    silence_thresh: float = 0.2,
+    target_sr: int = 16000
+) -> Tuple[List[Tuple[float, float]], int, float, int, float]:
+    """
+    Silero VAD を用いて IPU（発話区間）および Pause（無音区間）を抽出する。
+    """
+    # --- リサンプリング ---
+    if sr not in [8000, 16000]:
+        transform = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
+        audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
+        audio_tensor = transform(audio_tensor)
+        waveform = audio_tensor.squeeze(0)
+        sr = target_sr
+    else:
+        waveform = torch.from_numpy(audio).float()
+
+    # --- 音声区間の推定 ---
+    speech_timestamps = get_speech_timestamps(waveform, model, sampling_rate=sr)
+
+    ipus = [(seg["start"] / sr, seg["end"] / sr) for seg in speech_timestamps]
+    ipu_count = len(ipus)
+    ipu_duration_total = sum(e - s for s, e in ipus)
+
+    # --- 無音区間計算 ---
+    pause_count = 0
+    pause_total = 0.0
+    for (s1, e1), (s2, e2) in zip(ipus, ipus[1:]):
+        gap = s2 - e1
+        if gap >= silence_thresh:
+            pause_count += 1
+            pause_total += gap
+
+    return ipus, ipu_count, ipu_duration_total, pause_count, pause_total
+
+
+
 # --- メイン ---
 if __name__ == "__main__":
     wav_path = "data_sample_audio/callhome/000_1003_877.5_897.5.wav"
