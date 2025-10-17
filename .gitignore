@@ -5,6 +5,7 @@ data_real
 data_tabidachi
 data_ipu_pause_gap_overlap
 data_sample_audio
+data_sample_audio_old
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
