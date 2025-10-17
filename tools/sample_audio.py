@@ -9,9 +9,9 @@ import shutil
 
 # ------------ CONFIG ------------
 IN_DIR = Path(
-    "/home/acg17145sv/experiments/0162_dialogue_model/J-CHAT/separated/podcast_train/00000-of-01432"
+    "/home/acg17145sv/experiments/0162_dialogue_model/data_stage_3/CallHome/audio"
 )
-OUT_DIR = Path("data_sample_audio/podcast_train")
+OUT_DIR = Path("data_sample_audio/callhome")
 SEG_DUR = 20.0  # 固定抽出長（秒）
 N_SAMPLES = 50  # 必ず出力するサンプル数
 RANDOM_SEED = 42
