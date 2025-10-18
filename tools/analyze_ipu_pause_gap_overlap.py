@@ -52,16 +52,7 @@ def extract_ipu_and_pause(
     ipu_count = len(ipus)
     ipu_duration_total = sum(e - s for s, e in ipus)
 
-    # --- 無音区間計算 ---
-    pause_count = 0
-    pause_total = 0.0
-    for (s1, e1), (s2, e2) in zip(ipus, ipus[1:]):
-        gap = s2 - e1
-        if gap >= silence_thresh:
-            pause_count += 1
-            pause_total += gap
-
-    return ipus, ipu_count, ipu_duration_total, pause_count, pause_total
+    return ipus, ipu_count, ipu_duration_total
 
 
 # --- 相互無音（Mutual Pause）計上：同一話者の連続IPU間で相手が完全沈黙の区間のみを採用 ---
@@ -183,12 +174,8 @@ if __name__ == "__main__":
     channel_1 = audio[:, 1]
 
     # --- 各チャンネルのIPUとPause ---
-    ipus_0, ipu_c0, ipu_dur0, pause_c0, pause_dur0 = extract_ipu_and_pause(
-        channel_0, sr
-    )
-    ipus_1, ipu_c1, ipu_dur1, pause_c1, pause_dur1 = extract_ipu_and_pause(
-        channel_1, sr
-    )
+    ipus_0, ipu_c0, ipu_dur0 = extract_ipu_and_pause(channel_0, sr)
+    ipus_1, ipu_c1, ipu_dur1 = extract_ipu_and_pause(channel_1, sr)
 
     pause_c0, pause_dur0, _ = compute_mutual_pause(ipus_0, ipus_1)
     pause_c1, pause_dur1, _ = compute_mutual_pause(ipus_1, ipus_0)
