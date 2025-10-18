@@ -71,40 +71,53 @@ def compute_gap_overlap(
 ) -> Tuple[int, float, int, float]:
     """
     2チャンネルのIPUから、話者が異なる隣接発話間のGapおよびOverlapを計算。
+    二本指スイープで、毎回「A区間 vs B区間」の組を一つだけ評価し、
+    早く終わる方を進めることで、過不足なく数え上げる。
     """
+    i = j = 0
     gap_count = 0
     gap_total = 0.0
     overlap_count = 0
     overlap_total = 0.0
 
-    # すべての発話区間を結合し、開始時刻でソート
-    all_segments = sorted(
-        [(s, e, "A") for s, e in ipus_a] + [(s, e, "B") for s, e in ipus_b],
-        key=lambda x: x[0],
-    )
+    while i < len(ipus_a) and j < len(ipus_b):
+        a_s, a_e = ipus_a[i]
+        b_s, b_e = ipus_b[j]
 
-    # 隣接ペアを走査
-    for (s1, e1, spk1), (s2, e2, spk2) in zip(all_segments, all_segments[1:]):
-        # 話者が異なる場合のみ評価
-        if spk1 == spk2:
+        # 完全に離れている（Aが先に終わる → Aの終わりからBの始まりがGap）
+        if a_e <= b_s:
+            d = b_s - a_e
+            if d > 0:
+                gap_count += 1
+                gap_total += d
+            i += 1
             continue
 
-        gap = s2 - e1
-        if gap >= 0:
-            # 無音 (Gap)
-            gap_count += 1
-            gap_total += gap
-        else:
-            # 重なり (Overlap)
-            if e1 <= e2:
-                overlap = e1 - s2
-            else:
-                overlap = e2 - s2
+        # 完全に離れている（Bが先に終わる → Bの終わりからAの始まりがGap）
+        if b_e <= a_s:
+            d = a_s - b_e
+            if d > 0:
+                gap_count += 1
+                gap_total += d
+            j += 1
+            continue
 
+        # 重なっている（Overlap）
+        start = max(a_s, b_s)
+        end = min(a_e, b_e)
+        d = end - start
+        if d > 0:
             overlap_count += 1
-            overlap_total += overlap
+            overlap_total += d
 
-    return gap_count, gap_total, overlap_count, overlap_total
+        # 早く終わる側を進める（被覆や部分包含も自然に分割される）
+        if a_e <= b_e:
+            i += 1
+        else:
+            j += 1
+
+    # 表示の安定性のため軽く丸める（必要なら外してOK）
+    return gap_count, round(gap_total, 3), overlap_count, round(overlap_total, 3)
 
 
 # --- メイン ---
