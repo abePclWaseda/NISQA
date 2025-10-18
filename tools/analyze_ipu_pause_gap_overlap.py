@@ -64,6 +64,52 @@ def extract_ipu_and_pause(
     return ipus, ipu_count, ipu_duration_total, pause_count, pause_total
 
 
+# --- 相互無音（Mutual Pause）計上：同一話者の連続IPU間で相手が完全沈黙の区間のみを採用 ---
+def compute_mutual_pause(
+    ipus_self: List[Tuple[float, float]],
+    ipus_other: List[Tuple[float, float]],
+) -> Tuple[int, float, List[Tuple[float, float]]]:
+    """
+    同一話者の連続IPU間のギャップのうち、相手話者のIPUと一切重ならない区間のみを
+    Pause として採用する。thresholdは使わない（>0の長さのみ採用）。
+    返り値: (pause_count, pause_total_sec, pause_segments)
+    """
+    pause_count = 0
+    pause_total = 0.0
+    pause_segments: List[Tuple[float, float]] = []
+
+    j = 0
+    n_other = len(ipus_other)
+
+    for (s1, e1), (s2, e2) in zip(ipus_self, ipus_self[1:]):
+        gap_s, gap_e = e1, s2
+        if gap_e <= gap_s:
+            continue  # 長さ0以下は除外
+
+        # other を gap_s 以降まで進める
+        while j < n_other and ipus_other[j][1] <= gap_s:
+            j += 1
+
+        # 相手のどの区間とも一点でも重なれば不採用
+        has_overlap = False
+        k = j
+        while k < n_other and ipus_other[k][0] < gap_e:
+            other_s, other_e = ipus_other[k]
+            if other_e > gap_s:  # overlap 条件
+                has_overlap = True
+                break
+            k += 1
+
+        if not has_overlap:
+            d = gap_e - gap_s
+            if d > 0:
+                pause_count += 1
+                pause_total += d
+                pause_segments.append((gap_s, gap_e))
+
+    return pause_count, pause_total, pause_segments
+
+
 # --- Gap / Overlap 計算 ---
 def compute_gap_overlap(
     ipus_a: List[Tuple[float, float]],
@@ -143,6 +189,9 @@ if __name__ == "__main__":
     ipus_1, ipu_c1, ipu_dur1, pause_c1, pause_dur1 = extract_ipu_and_pause(
         channel_1, sr
     )
+
+    pause_c0, pause_dur0, _ = compute_mutual_pause(ipus_0, ipus_1)
+    pause_c1, pause_dur1, _ = compute_mutual_pause(ipus_1, ipus_0)
 
     # --- Gap / Overlap（両チャンネル間） ---
     gap_c, gap_dur, overlap_c, overlap_dur = compute_gap_overlap(ipus_0, ipus_1)
