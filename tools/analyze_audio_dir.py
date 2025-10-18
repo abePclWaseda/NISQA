@@ -10,8 +10,8 @@ import torchaudio
 
 # ========= 設定 =========
 DATA_DIR = "data_sample_audio/callhome"  # 集計したいディレクトリ
-PATTERN = "**/*.wav"                     # 再帰検索
-MERGE_SILENCE_THRESH = 0.2               # 近接IPU結合用（Silero VADの出力マージ用）
+PATTERN = "**/*.wav"  # 再帰検索
+MERGE_SILENCE_THRESH = 0.2  # 近接IPU結合用（Silero VADの出力マージ用）
 
 # ========= Silero VAD =========
 model, utils = torch.hub.load(
@@ -22,7 +22,10 @@ model, utils = torch.hub.load(
 
 # --- IPU抽出（Pauseはここでは返さない） ---
 def extract_ipu_and_pause(
-    audio: np.ndarray, sr: int, silence_thresh: float = MERGE_SILENCE_THRESH, target_sr: int = 16000
+    audio: np.ndarray,
+    sr: int,
+    silence_thresh: float = MERGE_SILENCE_THRESH,
+    target_sr: int = 16000,
 ) -> Tuple[List[Tuple[float, float]], int, float]:
     """
     Silero VAD でIPU（発話区間）列を得て、近接IPUを結合。
@@ -262,56 +265,57 @@ def main():
         processed += 1
 
     # ======= 出力 =======
-    print(f"Scanned wavs: {len(files)}, processed(stereo): {processed}, skipped: {skipped}")
-    if processed == 0 or total_duration_sec == 0:
+    print(
+        f"Scanned wavs: {len(files)}, processed(stereo): {processed}, skipped: {skipped}"
+    )
+    if processed == 0:
         return
 
-    total_minutes = total_duration_sec / 60.0
+    # ---- 20秒サンプルの単純平均（= 合計 / ファイル数）----
+    avg_ipu_c0 = sum_ipu_c0 / processed
+    avg_ipu_dur0 = sum_ipu_dur0 / processed
+    avg_ipu_c1 = sum_ipu_c1 / processed
+    avg_ipu_dur1 = sum_ipu_dur1 / processed
 
-    # ---- 時間重み付き平均（=合算の1分あたり率） ----
-    w_ipu_c0 = sum_ipu_c0 / total_minutes
-    w_ipu_d0 = sum_ipu_dur0 / total_minutes
-    w_ipu_c1 = sum_ipu_c1 / total_minutes
-    w_ipu_d1 = sum_ipu_dur1 / total_minutes
+    avg_pau_c0 = sum_pau_c0 / processed
+    avg_pau_dur0 = sum_pau_dur0 / processed
+    avg_pau_c1 = sum_pau_c1 / processed
+    avg_pau_dur1 = sum_pau_dur1 / processed
 
-    w_pau_c0 = sum_pau_c0 / total_minutes
-    w_pau_d0 = sum_pau_dur0 / total_minutes
-    w_pau_c1 = sum_pau_c1 / total_minutes
-    w_pau_d1 = sum_pau_dur1 / total_minutes
+    avg_gap_c = sum_gap_c / processed
+    avg_gap_dur = sum_gap_dur / processed
+    avg_ov_c = sum_ov_c / processed
+    avg_ov_dur = sum_ov_dur / processed
 
-    w_gap_c = sum_gap_c / total_minutes
-    w_gap_d = sum_gap_dur / total_minutes
-    w_ov_c = sum_ov_c / total_minutes
-    w_ov_d = sum_ov_dur / total_minutes
-
-    # ---- 単純平均（ファイル平均） ----
-    def avg(xs: List[float]) -> float:
-        return float(np.mean(xs)) if xs else 0.0
-
-    a_ipu_c0 = avg(pm_ipu_c0); a_ipu_d0 = avg(pm_ipu_d0)
-    a_ipu_c1 = avg(pm_ipu_c1); a_ipu_d1 = avg(pm_ipu_d1)
-
-    a_pau_c0 = avg(pm_pau_c0); a_pau_d0 = avg(pm_pau_d0)
-    a_pau_c1 = avg(pm_pau_c1); a_pau_d1 = avg(pm_pau_d1)
-
-    a_gap_c = avg(pm_gap_c);  a_gap_d  = avg(pm_gap_d)
-    a_ov_c  = avg(pm_ov_c);   a_ov_d   = avg(pm_ov_d)
-
-    print("\n===== Weighted averages (over all audio minutes) =====")
-    print("🗣️ Ch0  IPU   : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_ipu_c0, w_ipu_d0))
-    print("🗣️ Ch0  Pause : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_pau_c0, w_pau_d0))
-    print("🗣️ Ch1  IPU   : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_ipu_c1, w_ipu_d1))
-    print("🗣️ Ch1  Pause : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_pau_c1, w_pau_d1))
-    print("🎯 Gap        : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_gap_c, w_gap_d))
-    print("🎯 Overlap    : count/min = {:.3f}, dur/min = {:.3f} sec".format(w_ov_c, w_ov_d))
-
-    print("\n===== Simple averages (per-file 1/min averages) =====")
-    print("🗣️ Ch0  IPU   : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_ipu_c0, a_ipu_d0))
-    print("🗣️ Ch0  Pause : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_pau_c0, a_pau_d0))
-    print("🗣️ Ch1  IPU   : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_ipu_c1, a_ipu_d1))
-    print("🗣️ Ch1  Pause : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_pau_c1, a_pau_d1))
-    print("🎯 Gap        : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_gap_c, a_gap_d))
-    print("🎯 Overlap    : count/min = {:.3f}, dur/min = {:.3f} sec".format(a_ov_c, a_ov_d))
+    print("\n===== Averages over 20s samples (raw values) =====")
+    print(
+        "🗣️ Ch0  IPU   : count = {:.3f}, dur = {:.3f} sec".format(
+            avg_ipu_c0, avg_ipu_dur0
+        )
+    )
+    print(
+        "🗣️ Ch0  Pause : count = {:.3f}, dur = {:.3f} sec".format(
+            avg_pau_c0, avg_pau_dur0
+        )
+    )
+    print(
+        "🗣️ Ch1  IPU   : count = {:.3f}, dur = {:.3f} sec".format(
+            avg_ipu_c1, avg_ipu_dur1
+        )
+    )
+    print(
+        "🗣️ Ch1  Pause : count = {:.3f}, dur = {:.3f} sec".format(
+            avg_pau_c1, avg_pau_dur1
+        )
+    )
+    print(
+        "🎯 Gap        : count = {:.3f}, dur = {:.3f} sec".format(
+            avg_gap_c, avg_gap_dur
+        )
+    )
+    print(
+        "🎯 Overlap    : count = {:.3f}, dur = {:.3f} sec".format(avg_ov_c, avg_ov_dur)
+    )
 
 
 if __name__ == "__main__":
