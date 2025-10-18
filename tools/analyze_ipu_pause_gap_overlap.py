@@ -14,13 +14,11 @@ model, utils = torch.hub.load(
 
 # --- IPUとPause抽出 ---
 def extract_ipu_and_pause(
-    audio: np.ndarray,
-    sr: int,
-    silence_thresh: float = 0.2,
-    target_sr: int = 16000
+    audio: np.ndarray, sr: int, silence_thresh: float = 0.2, target_sr: int = 16000
 ) -> Tuple[List[Tuple[float, float]], int, float, int, float]:
     """
     Silero VAD を用いて IPU（発話区間）および Pause（無音区間）を抽出する。
+    silence_thresh 未満の無音区間は IPU 結合対象とする。
     """
     # --- リサンプリング ---
     if sr not in [8000, 16000]:
@@ -34,8 +32,23 @@ def extract_ipu_and_pause(
 
     # --- 音声区間の推定 ---
     speech_timestamps = get_speech_timestamps(waveform, model, sampling_rate=sr)
-
     ipus = [(seg["start"] / sr, seg["end"] / sr) for seg in speech_timestamps]
+
+    # --- 近接IPUの結合 ---
+    merged_ipus = []
+    for seg in ipus:
+        if not merged_ipus:
+            merged_ipus.append(seg)
+        else:
+            prev_s, prev_e = merged_ipus[-1]
+            curr_s, curr_e = seg
+            if curr_s - prev_e < silence_thresh:
+                # ギャップが閾値未満なら結合
+                merged_ipus[-1] = (prev_s, curr_e)
+            else:
+                merged_ipus.append(seg)
+
+    ipus = merged_ipus
     ipu_count = len(ipus)
     ipu_duration_total = sum(e - s for s, e in ipus)
 
@@ -50,6 +63,48 @@ def extract_ipu_and_pause(
 
     return ipus, ipu_count, ipu_duration_total, pause_count, pause_total
 
+
+# --- Gap / Overlap 計算 ---
+def compute_gap_overlap(
+    ipus_a: List[Tuple[float, float]],
+    ipus_b: List[Tuple[float, float]],
+) -> Tuple[int, float, int, float]:
+    """
+    2チャンネルのIPUから、話者が異なる隣接発話間のGapおよびOverlapを計算。
+    """
+    gap_count = 0
+    gap_total = 0.0
+    overlap_count = 0
+    overlap_total = 0.0
+
+    # すべての発話区間を結合し、開始時刻でソート
+    all_segments = sorted(
+        [(s, e, "A") for s, e in ipus_a] + [(s, e, "B") for s, e in ipus_b],
+        key=lambda x: x[0],
+    )
+
+    # 隣接ペアを走査
+    for (s1, e1, spk1), (s2, e2, spk2) in zip(all_segments, all_segments[1:]):
+        # 話者が異なる場合のみ評価
+        if spk1 == spk2:
+            continue
+
+        gap = s2 - e1
+        if gap >= 0:
+            # 無音 (Gap)
+            gap_count += 1
+            gap_total += gap
+        else:
+            # 重なり (Overlap)
+            if e1 <= e2:
+                overlap = e1 - s2
+            else:
+                overlap = e2 - s2
+
+            overlap_count += 1
+            overlap_total += overlap
+
+    return gap_count, gap_total, overlap_count, overlap_total
 
 
 # --- メイン ---
