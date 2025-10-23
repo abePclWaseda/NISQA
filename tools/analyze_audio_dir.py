@@ -9,7 +9,7 @@ import torch
 import torchaudio
 
 # ========= 設定 =========
-DATA_DIR = "data_sample_audio/callhome"  # 集計したいディレクトリ
+DATA_DIR = "/home/acg17145sv/experiments/0162_dialogue_model/moshi-finetune/output/moshi_stage3_new_jchat_clean_csj_tabidachi/step_498_fp32/continuation_tabidachi_test/generated_wavs"  # 集計したいディレクトリ
 PATTERN = "**/*.wav"  # 再帰検索
 MERGE_SILENCE_THRESH = 0.2  # 近接IPU結合用（Silero VADの出力マージ用）
 
@@ -289,32 +289,32 @@ def main():
 
     print("\n===== Averages over 20s samples (raw values) =====")
     print(
-        "🗣️ Ch0  IPU   : count = {:.3f}, dur = {:.3f} sec".format(
+        "🗣️ Ch0  IPU   : count = {:.2f}, dur = {:.2f} sec".format(
             avg_ipu_c0, avg_ipu_dur0
         )
     )
     print(
-        "🗣️ Ch0  Pause : count = {:.3f}, dur = {:.3f} sec".format(
+        "🗣️ Ch0  Pause : count = {:.2f}, dur = {:.2f} sec".format(
             avg_pau_c0, avg_pau_dur0
         )
     )
     print(
-        "🗣️ Ch1  IPU   : count = {:.3f}, dur = {:.3f} sec".format(
+        "🗣️ Ch1  IPU   : count = {:.2f}, dur = {:.2f} sec".format(
             avg_ipu_c1, avg_ipu_dur1
         )
     )
     print(
-        "🗣️ Ch1  Pause : count = {:.3f}, dur = {:.3f} sec".format(
+        "🗣️ Ch1  Pause : count = {:.2f}, dur = {:.2f} sec".format(
             avg_pau_c1, avg_pau_dur1
         )
     )
     print(
-        "🎯 Gap        : count = {:.3f}, dur = {:.3f} sec".format(
+        "🎯 Gap        : count = {:.2f}, dur = {:.2f} sec".format(
             avg_gap_c, avg_gap_dur
         )
     )
     print(
-        "🎯 Overlap    : count = {:.3f}, dur = {:.3f} sec".format(avg_ov_c, avg_ov_dur)
+        "🎯 Overlap    : count = {:.2f}, dur = {:.2f} sec".format(avg_ov_c, avg_ov_dur)
     )
 
 
