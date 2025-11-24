@@ -9,7 +9,7 @@ import torch
 import torchaudio
 
 # ========= 設定 =========
-DATA_DIR = "/home/acg17145sv/experiments/0162_dialogue_model/moshi-finetune/output/moshi_stage3_new_jchat_clean_csj_tabidachi/step_498_fp32/continuation_tabidachi_test/generated_wavs"  # 集計したいディレクトリ
+DATA_DIR = "data_sample_audio/j-chat-clean"  # 集計したいディレクトリ
 PATTERN = "**/*.wav"  # 再帰検索
 MERGE_SILENCE_THRESH = 0.2  # 近接IPU結合用（Silero VADの出力マージ用）
 
