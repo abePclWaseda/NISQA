@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -P gcg51557
-#PBS -q rt_HG
+#PBS -q R9920251000
 #PBS -v RTYPE=rt_HG,USE_SSH=1
 #PBS -l select=1:ngpus=1
 #PBS -l walltime=1:00:00
@@ -27,8 +27,8 @@ which python
 python --version
 
 # ===== Paths =====
-DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/moshi-finetune/output/moshi_stage3_new_jchat_tabidachi/step_498_fp32/continuation_tabidachi_full/generated_wavs"
-OUT_DIR="data_tabidachi/moshi_stage3_new_jchat_tabidachi"
+DATA_DIR="/groups/gcg51557/experiments/0215_audio_llm/data-processing/output/cleaned_wavs"
+OUT_DIR="data_real/j-chat-clean"
 LOG_DIR="logs"
 
 mkdir -p "$OUT_DIR" "$LOG_DIR" 
@@ -42,7 +42,7 @@ python run_predict.py \
   --data_dir "$DATA_DIR" \
   --num_workers 0 \
   --bs 10 \
-  --ms_max_segments 10000 \
+  --ms_max_segments 15000 \
   --output_dir "$OUT_DIR" 2>&1 | tee "$LOG_FILE"
 
 echo "Done. Results in: $OUT_DIR"
