@@ -9,9 +9,9 @@ import shutil
 
 # ------------ CONFIG ------------
 IN_DIR = Path(
-    "/home/acg17145sv/experiments/0215_audio_llm/data-processing/output/cleaned_wavs"
+    "/home/acg17145sv/experiments/0215_audio_llm/data-processing/alagin_travel_information/output/audio"
 )
-OUT_DIR = Path("data_sample_audio/j-chat-clean")
+OUT_DIR = Path("data_sample_audio/alagin_travel_information")
 SEG_DUR = 20.0  # 固定抽出長（秒）
 N_SAMPLES = 50  # 必ず出力するサンプル数
 RANDOM_SEED = 42
