@@ -27,8 +27,8 @@ which python
 python --version
 
 # ===== Paths =====
-DATA_DIR="/groups/gcg51557/experiments/0215_audio_llm/data-processing/output/cleaned_wavs"
-OUT_DIR="data_real/j-chat-clean"
+DATA_DIR="/home/acg17145sv/experiments/0162_dialogue_model/moshi-finetune/output/moshi-finetuned_init_text_emb_train_ohashi_llmjp-zoom1_and_VisualBank_7epochs_1node_exp_textpad1/step_12516_fp32/continuation_llmjp-zoom1_test/generated_wavs"
+OUT_DIR="data_llmjp-zoom1_test/tesmoshi-finetuned_init_text_emb_train_ohashi_llmjp-zoom1_and_VisualBank_7epochs_1node_exp_textpad1"
 LOG_DIR="logs"
 
 mkdir -p "$OUT_DIR" "$LOG_DIR" 
@@ -47,3 +47,12 @@ python run_predict.py \
 
 echo "Done. Results in: $OUT_DIR"
 echo "Log: $LOG_FILE"
+
+# ===== Check MOS scores =====
+CSV_FILE="${OUT_DIR}/NISQA_results.csv"
+if [ -f "$CSV_FILE" ]; then
+    echo "==== Checking MOS scores ====" | tee -a "$LOG_FILE"
+    python tools/check_mos.py "$CSV_FILE" | tee -a "$LOG_FILE"
+else
+    echo "Warning: NISQA_results.csv not found: $CSV_FILE" | tee -a "$LOG_FILE"
+fi
